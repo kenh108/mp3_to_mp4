@@ -1,4 +1,5 @@
 import os
+import uuid
 from flask import Flask, request, render_template, redirect, url_for, jsonify
 
 app = Flask(__name__)
@@ -34,8 +35,11 @@ def upload_file():
     if not allowed_file(audio.filename, ALLOWED_AUDIO_TYPES):
         return "invalid audio format", 400
 
-    image_path = os.path.join(app.config['UPLOAD_FOLDER'], image.filename)
-    audio_path = os.path.join(app.config['UPLOAD_FOLDER'], audio.filename)
+    unique_image_filename = str(uuid.uuid4()) + os.path.splitext(image.filename)[1]
+    unique_audio_filename = str(uuid.uuid4()) + os.path.splitext(audio.filename)[1]
+
+    image_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_image_filename)
+    audio_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_audio_filename)
     
     image.save(image_path)
     audio.save(audio_path)
