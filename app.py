@@ -1,27 +1,49 @@
 import os
 import uuid
 from flask import Flask, request, render_template, redirect, url_for, jsonify
+from PIL import Image
 
 app = Flask(__name__)
 
 UPLOAD_FOLDER='uploads'
+OUTPUT_FOLDER='processed'
 ALLOWED_IMAGE_TYPES = {'png', 'jpg', 'jpeg'}
 ALLOWED_AUDIO_TYPES = {'mp3'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER 
+app.config['OUTPUT_FOLDER'] = OUTPUT_FOLDER 
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 # 16mb limit
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 def allowed_file(filename, allowed_extensions):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
+
+# Ensure height and width are divisible by 2 for ffmpeg
+def ensure_even_dimensions(image_path):
+    img = Image.open(image_path)
+    width, height = img.size
+
+    if width % 2 == 0 and height % 2 == 0:
+        return image_path
+
+    new_width = width - (width % 2)
+    new_height = height - (height % 2)
+
+    img = img.resize((new_width, new_height), Image.LANCZOS)
+    new_image_path = image_path.replace(".", "_even.")
+    
+    img.save(new_image_path)
+
+    return new_image_path
 
 @app.route('/config')
 def get_config():
     return jsonify({"max_file_size": app.config['MAX_CONTENT_LENGTH']})
 
 @app.route('/')
-def home():
+def upload_form():
     return render_template('index.html')
 
 @app.route('/upload', methods=['POST'])
@@ -43,14 +65,18 @@ def upload_file():
 
     unique_image_filename = str(uuid.uuid4()) + os.path.splitext(image.filename)[1]
     unique_audio_filename = str(uuid.uuid4()) + os.path.splitext(audio.filename)[1]
+    unique_processed_filename = str(uuid.uuid4()) + ".mp4"
 
     image_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_image_filename)
     audio_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_audio_filename)
+    processed_path = os.path.join(app.config['OUTPUT_FOLDER'], unique_processed_filename)
     
     image.save(image_path)
     audio.save(audio_path)
 
-    return jsonify({"message": f"files uploaded successfully: {image.filename}, {audio.filename}"})
+    even_image_path = ensure_even_dimensions(image_path)
+
+    return jsonify({"message": f"new image path: {even_image_path}"})
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
