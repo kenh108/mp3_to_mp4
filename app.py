@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, render_template, redirect, url_for
+from flask import Flask, request, render_template, redirect, url_for, jsonify
 
 app = Flask(__name__)
 
@@ -40,7 +40,7 @@ def upload_file():
     image.save(image_path)
     audio.save(audio_path)
 
-    return f"files uploaded successfully: {image.filename}, {audio.filename}"
+    return jsonify({"message": f"files uploaded successfully: {image.filename}, {audio.filename}"})
 
         
 if __name__ == '__main__':

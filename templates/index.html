@@ -4,15 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>mp3_to_mp4</title>
+    <script>
+        function uploadFiles(event) {
+            event.preventDefault();
+
+            let formData = new FormData(document.getElementById("uploadForm"));
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("message").innerText = data.message;
+                document.getElementById("message").style.color = "green";
+            })
+            .catch(error => {
+                document.getElementById("message").innerText = "upload failed, try again";
+                document.getElementById("message").style.color = "red";
+            });
+        }
+    </script>
 </head>
 <body>
     <h2>mp3 to mp4</h2>
-    <form action="/upload" method="post" enctype="multipart/form-data">
+    <form id="uploadForm" enctype="multipart/form-data">
         <label for="image">Select an image:</label>
         <input type="file" id="image" name="image" accept="image/*" required><br><br>
+
         <label for="audio">Select an mp3:</label>
         <input type="file" id="audio" name="audio" accept="audio/mp3" required><br><br>
-        <button type="submit">Upload</button>
+
+        <button type="submit" onclick="uploadFiles(event)">Upload</button>
     </form>
+
+    <p id="message"></p> <!-- for response from server -->
 </body>
 </html>
