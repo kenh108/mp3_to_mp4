@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>mp3_to_mp4</title>
     <script>
+        let maxFileSize = null;
+
+        fetch('/config')
+            .then(response => response.json())
+            .then(data => {
+                maxFileSize = data.max_file_size;
+            })
+            .catch(() => {
+                maxFileSize = 100 * 1024 * 1024;
+            });
+
         function uploadFiles(event) {
             event.preventDefault();
 
@@ -14,13 +25,24 @@
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 413) {
+                        throw new Error(`file is too large, max size is ${maxFileSize / (1024 * 1024)}mb`);
+                    }
+
+                    return response.json().then(errData => {
+                        throw new Error(errData.message || "unknown error has occurred");
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 document.getElementById("message").innerText = data.message;
                 document.getElementById("message").style.color = "green";
             })
             .catch(error => {
-                document.getElementById("message").innerText = "upload failed, try again";
+                document.getElementById("message").innerText = error.message;
                 document.getElementById("message").style.color = "red";
             });
         }
