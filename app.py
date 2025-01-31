@@ -3,6 +3,7 @@ import uuid
 import subprocess
 from flask import Flask, request, render_template, redirect, url_for, jsonify, send_from_directory
 from PIL import Image
+from mutagen.mp3 import MP3
 
 app = Flask(__name__)
 
@@ -18,6 +19,7 @@ app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 # 16mb limit
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
+# Ensure file types are supported
 def allowed_file(filename, allowed_extensions):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
@@ -38,6 +40,10 @@ def ensure_even_dimensions(image_path):
     img.save(new_image_path)
 
     return new_image_path
+
+def get_audio_duration(audio_path):
+    audio = MP3(audio_path)
+    return audio.info.length
 
 @app.route('/config')
 def get_config():
@@ -77,7 +83,9 @@ def upload_files():
 
     even_image_path = ensure_even_dimensions(image_path)
 
-    ffmpeg_command = ["ffmpeg", "-loop", "1", "-i", even_image_path, "-i", audio_path, "-shortest", processed_path]
+    audio_duration = get_audio_duration(audio_path)
+
+    ffmpeg_command = ["ffmpeg", "-loop", "1", "-i", even_image_path, "-i", audio_path, "-t", str(audio_duration), processed_path]
 
     try:
         subprocess.run(ffmpeg_command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
