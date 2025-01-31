@@ -38,12 +38,18 @@
                 return response.json();
             })
             .then(data => {
+                if (!data.video_url) {
+                    throw new Error(data.message || "video processing failed");
+                }
+
                 document.getElementById("message").innerText = data.message;
                 document.getElementById("message").style.color = "green";
+                document.getElementById("downloadLink").innerHTML = `<a href="${data.video_url}" download>download video</a>`;
             })
             .catch(error => {
                 document.getElementById("message").innerText = error.message;
                 document.getElementById("message").style.color = "red";
+                document.getElementById("downloadLink").innerHTML = "";
             });
         }
     </script>
@@ -60,6 +66,7 @@
         <button type="submit" onclick="uploadFiles(event)">Upload</button>
     </form>
 
-    <p id="message"></p> <!-- for response from server -->
+    <p id="message"></p> <!-- for status response from server -->
+    <p id="downloadLink"></p> <!-- for download link -->
 </body>
 </html>

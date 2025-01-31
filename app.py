@@ -1,6 +1,7 @@
 import os
 import uuid
-from flask import Flask, request, render_template, redirect, url_for, jsonify
+import subprocess
+from flask import Flask, request, render_template, redirect, url_for, jsonify, send_from_directory
 from PIL import Image
 
 app = Flask(__name__)
@@ -47,7 +48,7 @@ def upload_form():
     return render_template('index.html')
 
 @app.route('/upload', methods=['POST'])
-def upload_file():
+def upload_files():
     if 'image' not in request.files or 'audio' not in request.files:
         return jsonify({"message": "both image and mp3 required"}), 400
 
@@ -76,7 +77,21 @@ def upload_file():
 
     even_image_path = ensure_even_dimensions(image_path)
 
-    return jsonify({"message": f"new image path: {even_image_path}"})
+    ffmpeg_command = ["ffmpeg", "-loop", "1", "-i", even_image_path, "-i", audio_path, "-shortest", processed_path]
+
+    try:
+        subprocess.run(ffmpeg_command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except subprocess.CalledProcessError as e:
+        return jsonify({"message": f"ffmpeg error: {e.stderr.decode()}"}), 500
+
+    return jsonify({
+        "message": "files uploaded and processed successfully",
+        "video_url": f"/download/{unique_processed_filename}"
+    })
+
+@app.route('/download/<filename>')
+def download_video(filename):
+    return send_from_directory(app.config['OUTPUT_FOLDER'], filename, as_attachment=True)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
