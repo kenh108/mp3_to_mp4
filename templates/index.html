@@ -6,6 +6,7 @@
     <title>mp3_to_mp4</title>
     <script>
         let maxFileSize = null;
+        let processingInterval;
 
         fetch('/config')
             .then(response => response.json())
@@ -20,6 +21,8 @@
             event.preventDefault();
 
             let formData = new FormData(document.getElementById("uploadForm"));
+
+            startProcessingAnimation();
 
             fetch('/upload', {
                 method: 'POST',
@@ -42,15 +45,34 @@
                     throw new Error(data.message || "video processing failed");
                 }
 
+                stopProcessingAnimation();
+
                 document.getElementById("message").innerText = data.message;
                 document.getElementById("message").style.color = "green";
                 document.getElementById("downloadLink").innerHTML = `<a href="${data.video_url}" download>download video</a>`;
             })
             .catch(error => {
+                stopProcessingAnimation();
+
                 document.getElementById("message").innerText = error.message;
                 document.getElementById("message").style.color = "red";
                 document.getElementById("downloadLink").innerHTML = "";
             });
+        }
+
+        function startProcessingAnimation() {
+            let dots = 0;
+            document.getElementById("message").innerText = "processing";
+            document.getElementById("message").style.color = "blue";
+
+            processingInterval = setInterval(() => {
+                dots = (dots + 1) % 4;
+                document.getElementById("message").innerText = "processing" + ".".repeat(dots);
+            }, 500);
+        }
+
+        function stopProcessingAnimation() {
+            clearInterval(processingInterval);
         }
     </script>
 </head>
