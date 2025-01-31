@@ -1,7 +1,7 @@
 import os
 import uuid
 import subprocess
-from flask import Flask, request, render_template, redirect, url_for, jsonify, send_from_directory
+from flask import Flask, request, render_template, redirect, url_for, jsonify, send_from_directory, send_file
 from PIL import Image
 from mutagen.mp3 import MP3
 
@@ -70,6 +70,9 @@ def upload_files():
     if not allowed_file(audio.filename, ALLOWED_AUDIO_TYPES):
         return jsonify({"message": "invalid audio format; only mp3 accepted"}), 400
 
+    original_filename = audio.filename.rpartition(".")[0]
+    print(original_filename)
+
     unique_image_filename = str(uuid.uuid4()) + os.path.splitext(image.filename)[1]
     unique_audio_filename = str(uuid.uuid4()) + os.path.splitext(audio.filename)[1]
     unique_processed_filename = str(uuid.uuid4()) + ".mp4"
@@ -85,7 +88,14 @@ def upload_files():
 
     audio_duration = get_audio_duration(audio_path)
 
-    ffmpeg_command = ["ffmpeg", "-loop", "1", "-i", even_image_path, "-i", audio_path, "-t", str(audio_duration), processed_path]
+    ffmpeg_command = [
+        "ffmpeg", "-loop", "1",
+        "-i", even_image_path,
+        "-i", audio_path,
+        "-c:v", "libx264", "-pix_fmt", "yuv420p", "-tune", "stillimage", "-c:a", "copy",
+        "-t", str(audio_duration),
+        processed_path
+    ]
 
     try:
         subprocess.run(ffmpeg_command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -94,12 +104,19 @@ def upload_files():
 
     return jsonify({
         "message": "file processed successfully",
-        "video_url": f"/download/{unique_processed_filename}"
+        "video_url": f"/download/{unique_processed_filename}?original={original_filename}"
     })
 
 @app.route('/download/<filename>')
 def download_video(filename):
-    return send_from_directory(app.config['OUTPUT_FOLDER'], filename, as_attachment=True)
+    original_filename = request.args.get("original", "video") # default to "video" if original name is missing
+    processed_path = os.path.join(app.config['OUTPUT_FOLDER'], filename)
+    print(original_filename)
+    
+    if not os.path.exists(processed_path):
+        return jsonify({"message": "file not found"}), 404
+
+    return send_file(processed_path, as_attachment=True, download_name=f"{original_filename}.mp4")
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

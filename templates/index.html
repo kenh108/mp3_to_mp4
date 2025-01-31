@@ -65,6 +65,7 @@
                 stopProcessingAnimation();
 
                 document.getElementById("message").innerText = data.message;
+                document.getElementById("message").style.color = "#333";
                 document.getElementById("downloadLink").innerHTML = `<a href="${data.video_url}" download>download video</a>`;
 
                 if (document.getElementById("autoDownload").checked) {
