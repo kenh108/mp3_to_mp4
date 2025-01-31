@@ -84,6 +84,7 @@
         function startProcessingAnimation() {
             let dots = 0;
             document.getElementById("message").innerText = "processing";
+            document.getElementById("message").style.color = "#333";
 
             processingInterval = setInterval(() => {
                 dots = (dots + 1) % 4;
