@@ -107,7 +107,7 @@ def upload_files():
         "ffmpeg", "-y", "-loop", "1",
         "-i", processed_image_path,
         "-i", audio_path,
-        "-c:v", "libx264", "-pix_fmt", "yuv420p", "-tune", "stillimage", "-c:a", "copy",
+        "-preset", "medium", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-tune", "stillimage", "-c:a", "copy",
         "-t", str(audio_duration),
         processed_video_path
     ]
