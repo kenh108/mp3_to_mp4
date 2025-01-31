@@ -66,6 +66,10 @@
 
                 document.getElementById("message").innerText = data.message;
                 document.getElementById("downloadLink").innerHTML = `<a href="${data.video_url}" download>download video</a>`;
+
+                if (document.getElementById("autoDownload").checked) {
+                    autoDownloadFile(data.video_url);
+                }
             })
             .catch(error => {
                 stopProcessingAnimation();
@@ -89,6 +93,15 @@
         function stopProcessingAnimation() {
             clearInterval(processingInterval);
         }
+
+        function autoDownloadFile(url) {
+            let a = document.createElement("a");
+            a.href = url;
+            a.download = url.split("/").pop();
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
     </script>
 </head>
 <body>
@@ -99,6 +112,10 @@
 
         <label for="audio">Select an mp3:</label>
         <input type="file" id="audio" name="audio" accept="audio/mp3" required><br><br>
+
+        <label for="autoDownload">
+            <input type="checkbox" id="autoDownload" style="margin-right: 8px;">Automatically download when mp4 is ready
+        </label><br><br>
 
         <button type="submit" onclick="uploadFiles(event)">Upload</button>
     </form>
