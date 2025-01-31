@@ -76,36 +76,50 @@ def upload_files():
 
     unique_image_filename = str(uuid.uuid4()) + os.path.splitext(image.filename)[1]
     unique_audio_filename = str(uuid.uuid4()) + os.path.splitext(audio.filename)[1]
-    unique_processed_filename = str(uuid.uuid4()) + ".mp4"
+    unique_processed_image_filename = str(uuid.uuid4()) + ".png"
+    unique_processed_video_filename = str(uuid.uuid4()) + ".mp4"
 
     image_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_image_filename)
     audio_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_audio_filename)
-    processed_path = os.path.join(app.config['OUTPUT_FOLDER'], unique_processed_filename)
+    processed_image_path = os.path.join(app.config['OUTPUT_FOLDER'], unique_processed_image_filename)
+    processed_video_path = os.path.join(app.config['OUTPUT_FOLDER'], unique_processed_video_filename)
     
     image.save(image_path)
     audio.save(audio_path)
 
-    even_image_path = ensure_even_dimensions(image_path)
-
-    audio_duration = get_audio_duration(audio_path)
-
-    ffmpeg_command = [
-        "ffmpeg", "-loop", "1",
-        "-i", even_image_path,
-        "-i", audio_path,
-        "-c:v", "libx264", "-pix_fmt", "yuv420p", "-tune", "stillimage", "-c:a", "copy",
-        "-t", str(audio_duration),
-        processed_path
+    ffmpeg_image_command = [
+        "ffmpeg", "-y", "-i", image_path, "-filter_complex",
+        "[0:v] scale=1920:1080:force_original_aspect_ratio=decrease [fg]; "
+        "[0:v] scale=1920:1080:force_original_aspect_ratio=increase, crop=1920:1080, gblur=sigma=20 [bg]; "
+        "[bg][fg] overlay=(W-w)/2:(H-h)/2",
+        "-compression_level", "0", "-pred", "mixed", "-q:v", "1",
+        processed_image_path
     ]
 
     try:
-        subprocess.run(ffmpeg_command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.run(ffmpeg_image_command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except subprocess.CalledProcessError as e:
-        return jsonify({"message": f"ffmpeg error: {e.stderr.decode()}"}), 500
+        return jsonify({"message": f"ffmpeg error processing image: {e.stderr.decode()}"}), 500
+
+    audio_duration = get_audio_duration(audio_path)
+
+    ffmpeg_video_command = [
+        "ffmpeg", "-y", "-loop", "1",
+        "-i", processed_image_path,
+        "-i", audio_path,
+        "-c:v", "libx264", "-pix_fmt", "yuv420p", "-tune", "stillimage", "-c:a", "copy",
+        "-t", str(audio_duration),
+        processed_video_path
+    ]
+
+    try:
+        subprocess.run(ffmpeg_video_command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except subprocess.CalledProcessError as e:
+        return jsonify({"message": f"ffmpeg error processing video: {e.stderr.decode()}"}), 500
 
     return jsonify({
         "message": "file processed successfully",
-        "video_url": f"/download/{unique_processed_filename}?original={original_filename_encoded}"
+        "video_url": f"/download/{unique_processed_video_filename}?original={original_filename_encoded}"
     })
 
 @app.route('/download/<filename>')
