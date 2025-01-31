@@ -4,6 +4,7 @@ import subprocess
 from flask import Flask, request, render_template, redirect, url_for, jsonify, send_from_directory, send_file
 from PIL import Image
 from mutagen.mp3 import MP3
+from urllib.parse import quote, unquote
 
 app = Flask(__name__)
 
@@ -71,7 +72,7 @@ def upload_files():
         return jsonify({"message": "invalid audio format; only mp3 accepted"}), 400
 
     original_filename = audio.filename.rpartition(".")[0]
-    print(original_filename)
+    original_filename_encoded = quote(original_filename)
 
     unique_image_filename = str(uuid.uuid4()) + os.path.splitext(image.filename)[1]
     unique_audio_filename = str(uuid.uuid4()) + os.path.splitext(audio.filename)[1]
@@ -104,12 +105,13 @@ def upload_files():
 
     return jsonify({
         "message": "file processed successfully",
-        "video_url": f"/download/{unique_processed_filename}?original={original_filename}"
+        "video_url": f"/download/{unique_processed_filename}?original={original_filename_encoded}"
     })
 
 @app.route('/download/<filename>')
 def download_video(filename):
-    original_filename = request.args.get("original", "video") # default to "video" if original name is missing
+    original_filename_encoded = request.args.get("original", "video") # default to "video" if original name is missing
+    original_filename = unquote(original_filename_encoded)
     processed_path = os.path.join(app.config['OUTPUT_FOLDER'], filename)
     print(original_filename)
     
