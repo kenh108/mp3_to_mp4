@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 UPLOAD_FOLDER='uploads'
 OUTPUT_FOLDER='processed'
-ALLOWED_IMAGE_TYPES = {'png', 'jpg', 'jpeg'}
+ALLOWED_IMAGE_TYPES = {'png', 'jpg', 'jpeg', 'webp'}
 ALLOWED_AUDIO_TYPES = {'mp3'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER 
@@ -65,7 +65,7 @@ def upload_files():
         return jsonify({"message": "both files not selected"}), 400
 
     if not allowed_file(image.filename, ALLOWED_IMAGE_TYPES):
-        return jsonify({"message": "invalid image format; only png, jpg, jpeg accepted"}), 400
+        return jsonify({"message": "invalid image format; only png, jpg, jpeg, webp accepted"}), 400
 
     if not allowed_file(audio.filename, ALLOWED_AUDIO_TYPES):
         return jsonify({"message": "invalid audio format; only mp3 accepted"}), 400
