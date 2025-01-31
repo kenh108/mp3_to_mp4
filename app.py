@@ -93,7 +93,7 @@ def upload_files():
         return jsonify({"message": f"ffmpeg error: {e.stderr.decode()}"}), 500
 
     return jsonify({
-        "message": "files uploaded and processed successfully",
+        "message": "file processed successfully",
         "video_url": f"/download/{unique_processed_filename}"
     })
 

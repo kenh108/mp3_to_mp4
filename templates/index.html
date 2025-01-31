@@ -4,6 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>mp3_to_mp4</title>
+
+    <style>
+        body {
+            font-size: 18px;
+            text-align: center;
+            color: #333;
+            margin: 50px;
+        }
+
+        h2 {
+            font-size: 36px;
+            font-weight: 1000;
+        }
+
+    </style>
+
     <script>
         let maxFileSize = null;
         let processingInterval;
@@ -21,6 +37,8 @@
             event.preventDefault();
 
             let formData = new FormData(document.getElementById("uploadForm"));
+
+            document.getElementById("downloadLink").innerHTML = "";
 
             startProcessingAnimation();
 
@@ -48,7 +66,6 @@
                 stopProcessingAnimation();
 
                 document.getElementById("message").innerText = data.message;
-                document.getElementById("message").style.color = "green";
                 document.getElementById("downloadLink").innerHTML = `<a href="${data.video_url}" download>download video</a>`;
             })
             .catch(error => {
@@ -63,7 +80,6 @@
         function startProcessingAnimation() {
             let dots = 0;
             document.getElementById("message").innerText = "processing";
-            document.getElementById("message").style.color = "blue";
 
             processingInterval = setInterval(() => {
                 dots = (dots + 1) % 4;
