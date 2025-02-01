@@ -34,6 +34,7 @@
 
             let formData = new FormData(document.getElementById("uploadForm"));
 
+            document.getElementById("errorMessage").innerText = "";
             document.getElementById("downloadLink").innerHTML = "";
 
             startProcessingAnimation();
@@ -61,8 +62,6 @@
 
                 stopProcessingAnimation();
 
-                document.getElementById("message").innerText = data.message;
-                document.getElementById("message").style.color = "#333";
                 document.getElementById("downloadLink").innerHTML = `<a href="${data.video_url}" download>download video</a>`;
 
                 if (document.getElementById("autoDownload").checked) {
@@ -72,24 +71,22 @@
             .catch(error => {
                 stopProcessingAnimation();
 
-                document.getElementById("message").innerText = error.message;
-                document.getElementById("message").style.color = "red";
-                document.getElementById("downloadLink").innerHTML = "";
+                document.getElementById("errorMessage").innerText = error.message;
             });
         }
 
         function startProcessingAnimation() {
             let dots = 0;
-            document.getElementById("message").innerText = "processing";
-            document.getElementById("message").style.color = "#333";
+            document.getElementById("processingMessage").innerText = "processing";
 
             processingInterval = setInterval(() => {
                 dots = (dots + 1) % 4;
-                document.getElementById("message").innerText = "processing" + ".".repeat(dots);
+                document.getElementById("processingMessage").innerText = "processing" + ".".repeat(dots);
             }, 500);
         }
 
         function stopProcessingAnimation() {
+            document.getElementById("processingMessage").innerText = "";
             clearInterval(processingInterval);
         }
 
@@ -112,14 +109,17 @@
         <label for="audio">Select an mp3:</label>
         <input type="file" id="audio" name="audio" accept="audio/mp3" required><br><br>
 
-        <label for="autoDownload">
-            <input type="checkbox" id="autoDownload" style="margin-right: 8px;">Automatically download when mp4 is ready
+        <label for="autoDownload" style="">
+            Automatically download:<input type="checkbox" id="autoDownload" style="margin-left: 8px;">
         </label><br><br>
 
-        <button type="submit" onclick="uploadFiles(event)">Upload</button>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <button type="submit" onclick="uploadFiles(event)">Upload</button>
+            <span id="processingMessage"></span>
+        </div>
     </form>
 
-    <p id="message"></p> <!-- for status response from server -->
-    <p id="downloadLink"></p> <!-- for download link -->
+    <p id="errorMessage" style="color: red;"></p>
+    <p id="downloadLink"></p>
 </body>
 </html>
